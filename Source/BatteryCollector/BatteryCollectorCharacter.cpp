@@ -3,6 +3,7 @@
 #include "BatteryCollector.h"
 #include "BatteryCollectorCharacter.h"
 #include "Pickup.h"
+#include "BatteryPickup.h"
 
 //////////////////////////////////////////////////////////////////////////
 // ABatteryCollectorCharacter
@@ -144,20 +145,36 @@ void ABatteryCollectorCharacter::CollectPickups()
 	TArray<AActor*> CollectedActors;
 	CollectionSphere->GetOverlappingActors(CollectedActors);
 
+	// keep track of the collected battery power
+	float CollectedPower = 0;
+
 	// For each Actor we collected
 	for (int32 iCollected = 0; iCollected < CollectedActors.Num(); ++iCollected)
 	{
 		// Cast the actor to APickup
-		APickup* const TextPickup = Cast<APickup>(CollectedActors[iCollected]);
+		APickup* const TestPickup = Cast<APickup>(CollectedActors[iCollected]);
 
 		// If the cast is successful and the pickup is valid and active
-		if (TextPickup && !TextPickup->IsPendingKill() && TextPickup->IsActive())
+		if (TestPickup && !TestPickup->IsPendingKill() && TestPickup->IsActive())
 		{
 			// Call the pickup's WasCollected function
-			TextPickup->WasCollected();
+			TestPickup->WasCollected();
+
+			// Check to see if the pickup is also a battery
+			ABatteryPickup* const TestBattery = Cast<ABatteryPickup>(TestPickup);
+			if (TestBattery)
+			{
+				// increate the collected power
+				CollectedPower += TestBattery->GetPower();
+			}
+
 			// Deactivate the pickup
-			TextPickup->SetActive(false);
+			TestPickup->SetActive(false);
 		}
+	}
+	if (CollectedPower > 0)
+	{
+		UpdatePower(CollectedPower);
 	}
 }
 
